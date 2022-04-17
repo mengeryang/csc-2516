@@ -54,11 +54,11 @@ class generator(nn.Module):
 		return output
 
 class discriminator(nn.Module):
-	def __init__(self, improved = False):
+	def __init__(self, embed_dim=1024, improved = False):
 		super(discriminator, self).__init__()
 		self.image_size = 64
 		self.num_channels = 3
-		self.embed_dim = 1024
+		self.embed_dim = embed_dim
 		self.projected_embed_dim = 128
 		self.ndf = 64
 
