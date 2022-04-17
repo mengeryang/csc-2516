@@ -15,7 +15,7 @@ class Trainer(object):
     def __init__(self, type, dataset, split, lr, diter, vis_screen, save_path, l1_coef, l2_coef, pre_trained_gen, pre_trained_disc, batch_size, num_workers, epochs,
                 embed_dim=512, config_path = 'config_clip.yaml', checkpoints_path = 'checkpoints_clip'):
         with open(config_path, 'r') as f:
-            config = yaml.load(f)
+            config = yaml.safe_load(f)
 
         self.generator = torch.nn.DataParallel(gan_factory.generator_factory(type, embed_dim).cuda())
         self.discriminator = torch.nn.DataParallel(gan_factory.discriminator_factory(type, embed_dim).cuda())
