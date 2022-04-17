@@ -113,12 +113,15 @@ class Trainer(object):
                     wrong_images = Variable(wrong_images.float()).cuda()
 
                     outputs, _ = self.discriminator(right_images, right_embed)
-                    real_loss = torch.mean(outputs)
+                    # real_loss = torch.mean(outputs)
+                    real_loss = torch.mean(outputs, dim=0).view(1)
+                    # d_loss_real = d_loss_real.mean(0).view(1)
                     real_loss.backward(mone)
 
                     if cls:
                         outputs, _ = self.discriminator(wrong_images, right_embed)
-                        wrong_loss = torch.mean(outputs)
+                        # wrong_loss = torch.mean(outputs)
+                        wrong_loss = torch.mean(outputs, dim=0).view(1)
                         wrong_loss.backward(one)
 
                     noise = Variable(torch.randn(right_images.size(0), self.noise_dim), volatile=True).cuda()
@@ -126,7 +129,8 @@ class Trainer(object):
 
                     fake_images = Variable(self.generator(right_embed, noise).data)
                     outputs, _ = self.discriminator(fake_images, right_embed)
-                    fake_loss = torch.mean(outputs)
+                    # fake_loss = torch.mean(outputs)
+                    fake_loss = torch.mean(outputs, dim=0).view(1)
                     fake_loss.backward(one)
 
                     ## NOTE: Pytorch had a bug with gradient penalty at the time of this project development
@@ -153,7 +157,8 @@ class Trainer(object):
                 fake_images = self.generator(right_embed, noise)
                 outputs, _ = self.discriminator(fake_images, right_embed)
 
-                g_loss = torch.mean(outputs)
+                # g_loss = torch.mean(outputs)
+                g_loss = torch.mean(outputs, dim=0).view(1)
                 g_loss.backward(mone)
                 g_loss = - g_loss
                 self.optimG.step()
