@@ -24,7 +24,7 @@ We used the [text embeddings](https://github.com/reedscot/icml2016) provided by 
 
 **To use this code you can either:**
 
-- Use the converted hd5 datasets,  [birds_bert](https://drive.google.com/file/d/1wVeY_W_d0f5QAuSkVf4GaY_m16XPNOoI/view?usp=sharing), [birds_clip](https://drive.google.com/file/d/1c1-cmBqllLbXVeCSY_7MSt8D9Agh4_Yg/view?usp=sharing), [birds_origin]()
+- Use the converted hd5 datasets,  [birds_bert](https://drive.google.com/file/d/1wVeY_W_d0f5QAuSkVf4GaY_m16XPNOoI/view?usp=sharing), [birds_clip](https://drive.google.com/file/d/1c1-cmBqllLbXVeCSY_7MSt8D9Agh4_Yg/view?usp=sharing), [birds_origin](https://utoronto-my.sharepoint.com/:u:/g/personal/zhaoyan_liu_mail_utoronto_ca/EXOKHjhL5WBBsyIh5J_DOmkBO7vDE9gIw9lui5BplCX_3Q?e=9gounS)
 - Convert the data youself
   1. download the dataset as described [here](https://github.com/reedscot/cvpr2016)
   2. Add the paths to the dataset to `config_[xxx].yaml` file.
