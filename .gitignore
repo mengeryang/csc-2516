@@ -1,0 +1,8 @@
+Text-to-Image-Synthesis/dataset/*
+*.pyc
+.idea/
+
+
+.vscode
+__pycache__
+*.out
