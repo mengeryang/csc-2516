@@ -1,6 +1,3 @@
-from __future__ import division
-from __future__ import print_function
-
 import os.path as osp
 import numpy as np
 from easydict import EasyDict as edict
@@ -15,21 +12,21 @@ __C.CONFIG_NAME = ''
 __C.DATA_DIR = ''
 __C.GPU_ID = 0
 __C.CUDA = True
-__C.WORKERS = 6
+__C.WORKERS = 2
 
 __C.RNN_TYPE = 'LSTM'   # 'GRU'
 __C.B_VALIDATION = False
 
 __C.TREE = edict()
-__C.TREE.BRANCH_NUM = 3
+__C.TREE.BRANCH_NUM = 1
 __C.TREE.BASE_SIZE = 64
 
 
 # Training options
 __C.TRAIN = edict()
-__C.TRAIN.BATCH_SIZE = 64
-__C.TRAIN.MAX_EPOCH = 600
-__C.TRAIN.SNAPSHOT_INTERVAL = 2000
+__C.TRAIN.BATCH_SIZE = 8
+__C.TRAIN.MAX_EPOCH = 100
+__C.TRAIN.SNAPSHOT_INTERVAL = 10
 __C.TRAIN.DISCRIMINATOR_LR = 2e-4
 __C.TRAIN.GENERATOR_LR = 2e-4
 __C.TRAIN.ENCODER_LR = 2e-4
@@ -59,7 +56,7 @@ __C.GAN.B_DCGAN = False
 
 __C.TEXT = edict()
 __C.TEXT.CAPTIONS_PER_IMAGE = 10
-__C.TEXT.EMBEDDING_DIM = 256
+__C.TEXT.EMBEDDING_DIM = 512
 __C.TEXT.WORDS_NUM = 18
 
 
