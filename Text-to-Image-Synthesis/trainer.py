@@ -7,12 +7,12 @@ from torch.utils.data import DataLoader
 
 from txt2image_dataset import Text2ImageDataset
 from models.gan_factory import gan_factory
-from utils import Utils, Logger
+from utils import Utils, Logger, Logger_NoVis
 from PIL import Image
 import os
 
 class Trainer(object):
-    def __init__(self, type, dataset, split, lr, diter, vis_screen, save_path, l1_coef, l2_coef, pre_trained_gen, pre_trained_disc, batch_size, num_workers, epochs):
+    def __init__(self, type, dataset, split, lr, diter, vis_screen, save_path, l1_coef, l2_coef, pre_trained_gen, pre_trained_disc, batch_size, num_workers, epochs, disable_visdom = False):
         with open('config_origin.yaml', 'r') as f:
             config = yaml.safe_load(f)
 
@@ -54,7 +54,7 @@ class Trainer(object):
         self.optimD = torch.optim.Adam(self.discriminator.parameters(), lr=self.lr, betas=(self.beta1, 0.999))
         self.optimG = torch.optim.Adam(self.generator.parameters(), lr=self.lr, betas=(self.beta1, 0.999))
 
-        self.logger = Logger(vis_screen)
+        self.logger = Logger(vis_screen) if not disable_visdom else Logger_NoVis()
         self.checkpoints_path = 'checkpoints'
         self.save_path = save_path
         self.type = type

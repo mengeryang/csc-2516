@@ -20,6 +20,7 @@ parser.add_argument('--split', default=0, type=int)
 parser.add_argument('--batch_size', default=64, type=int)
 parser.add_argument('--num_workers', default=8, type=int)
 parser.add_argument('--epochs', default=200, type=int)
+parser.add_argument("--disable_visdom", default=False, action='store_true')
 args = parser.parse_args()
 
 trainer = Trainer(type=args.type,
@@ -35,7 +36,8 @@ trainer = Trainer(type=args.type,
                   pre_trained_gen=args.pre_trained_gen,
                   batch_size=args.batch_size,
                   num_workers=args.num_workers,
-                  epochs=args.epochs
+                  epochs=args.epochs,
+                  disable_visdom=args.disable_visdom
                   )
 
 if not args.inference:
