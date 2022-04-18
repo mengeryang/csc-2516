@@ -22,7 +22,7 @@ class InceptionV3(nn.Module):
 
 
 def train(args):
-    model = InceptionV3().cuda()
+    model = InceptionV3().cuda().train()
     dataset = InceptionDataset(args.dataset_path)
     dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True,
                             num_workers=args.num_workers)
@@ -68,7 +68,7 @@ if __name__ == "__main__":
     parser.add_argument("--save_path", default='/scratch/gobi2/wren/2516/inception_v3.pth')
     parser.add_argument('--dataset_path', default='./dataset/birds.hdf5')
     parser.add_argument('--print_interval', default=5, type=int)
-    parser.add_argument('--tqdm_interval', default=60, type=int)
+    parser.add_argument('--tqdm_interval', default=60, type=float)
     args = parser.parse_args()
 
     train(args)
