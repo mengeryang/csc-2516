@@ -1,5 +1,6 @@
 import argparse
 from tqdm import tqdm
+import numpy as np
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -48,24 +49,48 @@ def train(args):
             iterations += 1
 
         if (epoch + 1) % args.print_interval == 0:
+            print("")
             print(f"Epoch {epoch + 1} training loss: {running_loss / iterations}")
+            print("")
+        
+        if (epoch + 1) % 10 == 0:
+            print("")
+            print("Compute training accuracy...")
+            right = 0.
+            total = 0.
+            for sample in tqdm(dataloader, mininterval=args.tqdm_interval):
+                imgs = sample['right_images'].float().cuda()
+                labels = sample['right_classes'].squeeze(1).numpy()
+
+                with torch.no_grad():
+                    logit = model(imgs)
+                    prob, class_ = torch.max(nn.functional.softmax(logit, dim=1), dim=1)
+
+                class_ = class_.cpu().numpy()
+                right += np.sum(class_ == labels)
+                total += len(class_)
+            accuracy = right / total
+            print("")
+            print(f"Training accuracy: {accuracy}")
+            print("")
+            torch.save(model.state_dict(), args.save_path + f"inception_v3_{epoch + 1}.pth")
 
         if (epoch + 1) % 2 == 0:
             scheduler.step()
 
-    torch.save(model.state_dict(), args.save_path)
+    torch.save(model.state_dict(), args.save_path + "inception_v3_latest.pth")
     return model
 
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--lr", default=0.05, type=float)
+    parser.add_argument("--lr", default=0.005, type=float)
     parser.add_argument("--gamma", default=0.94, type=float)
     parser.add_argument('--batch_size', default=32, type=int)
     parser.add_argument('--num_workers', default=8, type=int)
     parser.add_argument('--epochs', default=100, type=int)
-    parser.add_argument("--save_path", default='/scratch/gobi2/wren/2516/inception_v3.pth')
+    parser.add_argument("--save_path", default='/scratch/gobi2/wren/2516/')
     parser.add_argument('--dataset_path', default='./dataset/birds.hdf5')
     parser.add_argument('--print_interval', default=5, type=int)
     parser.add_argument('--tqdm_interval', default=60, type=float)
