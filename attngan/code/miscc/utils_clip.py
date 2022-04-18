@@ -176,7 +176,7 @@ def build_super_images(real_imgs, captions,
         return None
 
 
-def build_super_images2(real_imgs, captions, cap_lens, ixtoword,
+def build_super_images2(real_imgs, captions, cap_lens,
                         attn_maps, att_sze, vis_size=256, topK=5):
     batch_size = real_imgs.size(0)
     max_word_num = np.max(cap_lens)
@@ -199,7 +199,7 @@ def build_super_images2(real_imgs, captions, cap_lens, ixtoword,
     num = len(attn_maps)
 
     text_map, sentences = \
-        drawCaption(text_convas, captions, ixtoword, vis_size, off1=0)
+        drawCaption(text_convas, captions, vis_size, off1=0)
     text_map = np.asarray(text_map).astype(np.uint8)
 
     bUpdate = 1
