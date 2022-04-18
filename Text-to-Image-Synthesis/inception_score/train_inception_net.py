@@ -1,4 +1,5 @@
 import argparse
+from tqdm import tqdm
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -32,7 +33,7 @@ def train(args):
     for epoch in range(args.epochs):
         running_loss = 0
         iterations = 0
-        for sample in dataloader:
+        for sample in tqdm(dataloader, mininterval=args.tqdm_interval):
             imgs = sample['right_images'].float().cuda()
             labels = sample['right_classes'].squeeze(1).cuda()
 
@@ -67,6 +68,7 @@ if __name__ == "__main__":
     parser.add_argument("--save_path", default='/scratch/gobi2/wren/2516/inception_v3.pth')
     parser.add_argument('--dataset_path', default='./dataset/birds.hdf5')
     parser.add_argument('--print_interval', default=5, type=int)
+    parser.add_argument('--tqdm_interval', default=60, type=int)
     args = parser.parse_args()
 
     train(args)
