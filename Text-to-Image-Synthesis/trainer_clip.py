@@ -170,8 +170,8 @@ class Trainer(object):
                 
             self.logger.plot_epoch(gen_iteration)
 
-            if (epoch+1) % 50 == 0:
-                Utils.save_checkpoint(self.discriminator, self.generator, self.checkpoints_path, epoch)
+            if (epoch+1) % 10 == 0:
+                Utils.save_checkpoint(self.discriminator, self.generator, self.checkpoints_path, self.save_path, epoch)
 
     def _train_gan(self, cls):
         criterion = nn.BCELoss()
