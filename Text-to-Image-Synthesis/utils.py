@@ -84,6 +84,7 @@ class Utils(object):
     @staticmethod
     def save_checkpoint(netD, netG, dir_path, subdir_path, epoch):
         path =  os.path.join(dir_path, subdir_path)
+        print(f"model saved to: {path}")
         if not os.path.exists(path):
             os.makedirs(path)
 
