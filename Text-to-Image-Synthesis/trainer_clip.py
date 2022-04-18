@@ -55,7 +55,7 @@ class Trainer(object):
         self.optimD = torch.optim.Adam(self.discriminator.parameters(), lr=self.lr, betas=(self.beta1, 0.999))
         self.optimG = torch.optim.Adam(self.generator.parameters(), lr=self.lr, betas=(self.beta1, 0.999))
 
-        self.logger = Logger(vis_screen) if not disable_visdom else Logger_NoVis()
+        self.logger = Logger(vis_screen) if not disable_visdom else Logger_NoVis(vis_screen)
         self.checkpoints_path = checkpoints_path
         self.save_path = save_path
         self.type = type
