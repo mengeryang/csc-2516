@@ -8,13 +8,13 @@ import time
 
 from txt2image_dataset import Text2ImageDataset
 from models.gan_factory_clip import gan_factory
-from utils import Utils, Logger
+from utils import Utils, Logger, Logger_NoVis
 from PIL import Image
 import os
 
 class Trainer(object):
     def __init__(self, type, dataset, split, lr, diter, vis_screen, save_path, l1_coef, l2_coef, pre_trained_gen, pre_trained_disc, batch_size, num_workers, epochs,
-                embed_dim=512, config_path = 'config_clip.yaml', checkpoints_path = 'checkpoints_clip', int_coef = 0.5):
+                embed_dim=512, config_path = 'config_clip.yaml', checkpoints_path = 'checkpoints_clip', int_coef = 0.5, disable_visdom = False):
         with open(config_path, 'r') as f:
             config = yaml.load(f)
 
@@ -57,7 +57,7 @@ class Trainer(object):
         self.optimD = torch.optim.Adam(self.discriminator.parameters(), lr=self.lr, betas=(self.beta1, 0.999))
         self.optimG = torch.optim.Adam(self.generator.parameters(), lr=self.lr, betas=(self.beta1, 0.999))
 
-        self.logger = Logger(vis_screen)
+        self.logger = Logger(vis_screen) if not disable_visdom else Logger_NoVis(vis_screen)
         self.checkpoints_path = checkpoints_path
         self.save_path = save_path
         self.type = type
