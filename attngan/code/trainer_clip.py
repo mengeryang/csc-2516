@@ -467,14 +467,41 @@ class ClipGANTrainer(object):
                     #######################################################
                     # (1) Extract text embeddings
                     ######################################################
+                    target_color = "yellow"
+                    replace_color = "blue"
+                    replaced_captions = []
+                    target_color_idx = []
+                    for caption in captions:
+                        target_color_idx.append(caption.split().index(target_color))
+                        replaced_captions.append(caption.replace(target_color, replace_color))
+
                     inputs = self.clip_processor(text=captions, images=self.dummy_img, return_tensors="pt",
                                                  padding=True)
+                    inputs2 = self.clip_processor(text=replaced_captions, images=self.dummy_img, return_tensors="pt",
+                                                 padding=True)
+                    inputs3 = self.clip_processor(text=target_color, images=self.dummy_img, return_tensors="pt",
+                                                 padding=True)
+                    inputs4 = self.clip_processor(text=replace_color, images=self.dummy_img, return_tensors="pt",
+                                                  padding=True)
                     for k in inputs.keys():
                         inputs[k] = inputs[k].cuda()
+                        inputs2[k] = inputs2[k].cuda()
+                        inputs3[k] = inputs3[k].cuda()
+                        inputs4[k] = inputs4[k].cuda()
                     clip_output = text_encoder(**inputs)
+                    clip_output2 = text_encoder(**inputs2)
+                    clip_output3 = text_encoder(**inputs4)
+                    clip_output4 = text_encoder(**inputs4)
                     mask = (inputs.attention_mask == 0).cuda()
                     sent_emb = clip_output.text_embeds.cuda()
-                    words_embs = clip_output.text_model_output.last_hidden_state.transpose(1, 2).cuda()
+                    sent_emb = sent_emb - clip_output3.text_embeds.cuda() + clip_output4.text_embeds.cuda()
+                    words_embs = clip_output.text_model_output.last_hidden_state
+                    for i in range(len(captions)):
+                        # add 1 offset for <start> token
+                        if target_color_idx[i] >= 0:
+                            words_embs[i, target_color_idx[i] + 1, :] = clip_output2.text_model_output.last_hidden_state[i, target_color_idx[i] + 1, :]
+                    words_embs = words_embs.transpose(1, 2).cuda()
+                    # words_embs = clip_output.text_model_output.last_hidden_state.transpose(1, 2).cuda()
                     #######################################################
                     # (2) Generate fake images
                     ######################################################
@@ -504,7 +531,7 @@ class ClipGANTrainer(object):
                             att_sze = attn_maps.size(2)
                             img_set, sentences = \
                                 build_super_images2(im[j].unsqueeze(0),
-                                                    captions[j],
+                                                    [captions[j]],
                                                     [cap_lens_np[j]],
                                                     [attn_maps[j]], att_sze)
                             if img_set is not None:
