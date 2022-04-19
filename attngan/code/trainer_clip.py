@@ -10,9 +10,9 @@ import torch.backends.cudnn as cudnn
 from PIL import Image
 
 from miscc.config import cfg
-from miscc.utils import mkdir_p
-from miscc.utils import build_super_images, build_super_images2
-from miscc.utils import weights_init, load_params, copy_G_params
+from miscc.utils_clip import mkdir_p
+from miscc.utils_clip import build_super_images, build_super_images2
+from miscc.utils_clip import weights_init, load_params, copy_G_params
 from model import G_DCGAN, G_NET
 from datasets_clip import prepare_data
 from model import RNN_ENCODER, CNN_ENCODER
@@ -23,6 +23,7 @@ import os
 import time
 import numpy as np
 from transformers import CLIPModel, CLIPProcessor
+import requests
 
 # ################# Text to image task############################ #
 class ClipGANTrainer(object):
@@ -45,6 +46,8 @@ class ClipGANTrainer(object):
         self.data_loader = data_loader
         self.num_batches = len(self.data_loader)
         self.clip_processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+        img_url = "http://images.cocodataset.org/val2017/000000011149.jpg"
+        self.dummy_img = Image.open(requests.get(img_url, stream=True).raw)
 
     def prepare_image_encoder(self):
         image_encoder = CNN_ENCODER(cfg.TEXT.EMBEDDING_DIM)
@@ -125,7 +128,7 @@ class ClipGANTrainer(object):
                     netsD[i].load_state_dict(state_dict)
         # ########################################################### #
         if cfg.CUDA:
-            text_encoder = text_encoder.cuda()
+            # text_encoder = text_encoder.cuda()
             image_encoder = image_encoder.cuda()
             netG.cuda()
             for i in range(len(netsD)):
@@ -192,7 +195,7 @@ class ClipGANTrainer(object):
             attn_maps = attention_maps[i]
             att_sze = attn_maps.size(2)
             img_set, _ = \
-                build_super_images(img, captions, self.ixtoword,
+                build_super_images(img, captions,
                                    attn_maps, att_sze, lr_imgs=lr_img)
             if img_set is not None:
                 im = Image.fromarray(img_set)
@@ -211,7 +214,7 @@ class ClipGANTrainer(object):
                                     None, self.batch_size)
         img_set, _ = \
             build_super_images(fake_imgs[i].detach().cpu(),
-                               captions, self.ixtoword, att_maps, att_sze)
+                               captions, att_maps, att_sze)
         if img_set is not None:
             im = Image.fromarray(img_set)
             fullpath = '%s/D_%s_%d.png'\
@@ -250,11 +253,11 @@ class ClipGANTrainer(object):
 
                 # words_embs: batch_size x nef x seq_len
                 # sent_emb: batch_size x nef
-                inputs = self.clip_processor(text=captions)
+                inputs = self.clip_processor(text=captions, images=self.dummy_img, return_tensors="pt", padding=True)
                 clip_output = text_encoder(**inputs)
-                mask = inputs.attention_mask
-                sent_emb = clip_output.text_embeds
-                words_embs = clip_output.text_model_output.last_hidden_state.transpose(1, 2)
+                mask = (inputs.attention_mask == 0).cuda()
+                sent_emb = clip_output.text_embeds.cuda()
+                words_embs = clip_output.text_model_output.last_hidden_state.transpose(1, 2).cuda()
 
                 #######################################################
                 # (2) Generate fake images
@@ -361,12 +364,8 @@ class ClipGANTrainer(object):
             netG.cuda()
             netG.eval()
             #
-            text_encoder = RNN_ENCODER(self.n_words, nhidden=cfg.TEXT.EMBEDDING_DIM)
-            state_dict = \
-                torch.load(cfg.TRAIN.NET_E, map_location=lambda storage, loc: storage)
-            text_encoder.load_state_dict(state_dict)
-            print('Load text encoder from:', cfg.TRAIN.NET_E)
-            text_encoder = text_encoder.cuda()
+            text_encoder = self.prepare_text_encoder()
+            text_encoder.cuda()
             text_encoder.eval()
 
             batch_size = self.batch_size
@@ -398,15 +397,13 @@ class ClipGANTrainer(object):
 
                     imgs, captions, cap_lens, class_ids, keys = prepare_data(data)
 
-                    hidden = text_encoder.init_hidden(batch_size)
-                    # words_embs: batch_size x nef x seq_len
-                    # sent_emb: batch_size x nef
-                    words_embs, sent_emb = text_encoder(captions, cap_lens, hidden)
-                    words_embs, sent_emb = words_embs.detach(), sent_emb.detach()
-                    mask = (captions == 0)
-                    num_words = words_embs.size(2)
-                    if mask.size(1) > num_words:
-                        mask = mask[:, :num_words]
+                    inputs = self.clip_processor(text=captions, images=self.dummy_img, return_tensors="pt",                   padding=True)
+                    for k in inputs.keys():
+                        inputs[k] = inputs[k].cuda()
+                    clip_output = text_encoder(**inputs)
+                    mask = (inputs.attention_mask == 0).cuda()
+                    sent_emb = clip_output.text_embeds.cuda()
+                    words_embs = clip_output.text_model_output.last_hidden_state.transpose(1, 2).cuda()
 
                     #######################################################
                     # (2) Generate fake images
@@ -435,14 +432,8 @@ class ClipGANTrainer(object):
             print('Error: the path for morels is not found!')
         else:
             # Build and load the generator
-            text_encoder = \
-                RNN_ENCODER(self.n_words, nhidden=cfg.TEXT.EMBEDDING_DIM)
-            state_dict = \
-                torch.load(cfg.TRAIN.NET_E, map_location=lambda storage, loc: storage)
-            text_encoder.load_state_dict(state_dict)
-            print('Load text encoder from:', cfg.TRAIN.NET_E)
-            text_encoder = text_encoder.cuda()
-            text_encoder.eval()
+            text_encoder = self.prepare_text_encoder()
+            # text_encoder = text_encoder.cuda()
 
             # the path to save generated images
             if cfg.GAN.B_DCGAN:
@@ -462,12 +453,12 @@ class ClipGANTrainer(object):
                 mkdir_p(save_dir)
                 captions, cap_lens, sorted_indices = data_dic[key]
 
-                batch_size = captions.shape[0]
+                batch_size = len(captions)
                 nz = cfg.GAN.Z_DIM
-                captions = Variable(torch.from_numpy(captions), volatile=True)
+                # captions = Variable(torch.from_numpy(captions), volatile=True)
                 cap_lens = Variable(torch.from_numpy(cap_lens), volatile=True)
 
-                captions = captions.cuda()
+                # captions = captions.cuda()
                 cap_lens = cap_lens.cuda()
                 for i in range(1):  # 16
                     noise = Variable(torch.FloatTensor(batch_size, nz), volatile=True)
@@ -475,11 +466,12 @@ class ClipGANTrainer(object):
                     #######################################################
                     # (1) Extract text embeddings
                     ######################################################
-                    hidden = text_encoder.init_hidden(batch_size)
-                    # words_embs: batch_size x nef x seq_len
-                    # sent_emb: batch_size x nef
-                    words_embs, sent_emb = text_encoder(captions, cap_lens, hidden)
-                    mask = (captions == 0)
+                    inputs = self.clip_processor(text=captions, images=self.dummy_img, return_tensors="pt",
+                                                 padding=True)
+                    clip_output = text_encoder(**inputs)
+                    mask = (inputs.attention_mask == 0).cuda()
+                    sent_emb = clip_output.text_embeds.cuda()
+                    words_embs = clip_output.text_model_output.last_hidden_state.transpose(1, 2).cuda()
                     #######################################################
                     # (2) Generate fake images
                     ######################################################
@@ -509,8 +501,8 @@ class ClipGANTrainer(object):
                             att_sze = attn_maps.size(2)
                             img_set, sentences = \
                                 build_super_images2(im[j].unsqueeze(0),
-                                                    captions[j].unsqueeze(0),
-                                                    [cap_lens_np[j]], self.ixtoword,
+                                                    captions[j],
+                                                    [cap_lens_np[j]],
                                                     [attn_maps[j]], att_sze)
                             if img_set is not None:
                                 im = Image.fromarray(img_set)
