@@ -10,17 +10,18 @@ import torch.nn.functional as F
 
 class InceptionDataset(Dataset):
 
-    def __init__(self, datasetFile, transform=None):
+    def __init__(self, datasetFile, transform=None, split=["train", "test", "valid"]):
         self.datasetFile = datasetFile
         self.transform = transform
         self.dataset = None
         self.dataset_keys = None
         self.h5py2int = lambda x: int(np.array(x))
+        self.split = split
 
     def __len__(self):
         f = h5py.File(self.datasetFile, 'r')
         self.dataset_keys = []
-        for split in f.keys():
+        for split in self.split:
             self.dataset_keys += [split + '/' + str(k) for k in f[split].keys()]
         length = len(self.dataset_keys)
         f.close()
@@ -31,7 +32,7 @@ class InceptionDataset(Dataset):
         if self.dataset is None:
             self.dataset = h5py.File(self.datasetFile, mode='r')
             self.dataset_keys = []
-            for split in self.dataset.keys():
+            for split in self.split:
                 self.dataset_keys += [split + '/' + str(k) for k in self.dataset[split].keys()]
 
         example_name = self.dataset_keys[idx]
@@ -42,6 +43,7 @@ class InceptionDataset(Dataset):
         right_image = bytes(np.array(example['img']))
         right_class = example['class'][()]
         right_class = int(right_class.split(".")[0]) - 1
+        right_embed = np.array(example['embeddings'], dtype=float)
 
         right_image = Image.open(io.BytesIO(right_image)).resize((64, 64))
         # inception v3 input size
@@ -51,7 +53,8 @@ class InceptionDataset(Dataset):
 
         sample = {
                 'right_images': torch.FloatTensor(right_image),
-                'right_classes': torch.LongTensor([right_class])
+                'right_classes': torch.LongTensor([right_class]),
+                'right_embed': torch.FloatTensor(right_embed)
                  }
 
         sample['right_images'] = sample['right_images'].sub_(127.5).div_(127.5)
