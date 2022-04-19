@@ -99,7 +99,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--batch_size', default=4, type=int)
     parser.add_argument('--num_workers', default=8, type=int)
-    parser.add_argument("--model_path", default='./dataset/inception_v3_latest.pth')
+    parser.add_argument("--model_path", default='./dataset/inception_v3_latest_birds.pth')
     parser.add_argument('--dataset_type', default='birds', choices=['birds', 'flowers'], type=str)
     parser.add_argument('--dataset_path', default='./dataset/birds_clip.hdf5')
     parser.add_argument('--dataset_split', default='test', type=str, help="separate by comma")
