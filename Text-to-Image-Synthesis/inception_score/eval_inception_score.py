@@ -23,7 +23,7 @@ def inception_score(args, cuda=True, resize=False, splits=1):
     splits -- number of splits
     """
 
-    imgs = InceptionDataset(args.dataset_path, split=['test'])
+    imgs = InceptionDataset(args.dataset_type, args.dataset_path, split=args.split)
     N = len(imgs)
 
     batch_size = args.batch_size
@@ -43,7 +43,7 @@ def inception_score(args, cuda=True, resize=False, splits=1):
     dataloader = torch.utils.data.DataLoader(imgs, batch_size=batch_size, num_workers=args.num_workers)
 
     # Load inception model
-    inception_model = InceptionV3(200).type(dtype)
+    inception_model = InceptionV3(args.n_class).type(dtype)
     state_dict = torch.load(args.model_path)
     inception_model.load_state_dict(state_dict)
     inception_model.train()
@@ -100,7 +100,9 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', default=4, type=int)
     parser.add_argument('--num_workers', default=8, type=int)
     parser.add_argument("--model_path", default='./dataset/inception_v3_latest.pth')
+    parser.add_argument('--dataset_type', default='birds', choices=['birds', 'flowers'], type=str)
     parser.add_argument('--dataset_path', default='./dataset/birds_clip.hdf5')
+    parser.add_argument('--dataset_split', default='test', type=str, help="separate by comma")
     parser.add_argument('--print_interval', default=5, type=int)
     parser.add_argument('--tqdm_interval', default=60, type=float)
     parser.add_argument('--mode', default="fake", type=str)
@@ -112,6 +114,15 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     resize = True if args.mode == "fake" else False
+
+    args.split = [split for split in args.dataset_split.split(",")]
+
+    class_dict = {"train":150, "valid":50, "test":50} if args.dataset_type == "birds" else {"train":62, "valid":20, "test":20}
+
+    n_class = 0
+    for split in args.split:
+        n_class += class_dict[split]
+    args.n_class = n_class
 
     print ("Calculating Inception Score...")
     # only support cuda=True

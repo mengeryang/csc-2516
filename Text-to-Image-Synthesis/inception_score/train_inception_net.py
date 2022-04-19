@@ -23,8 +23,8 @@ class InceptionV3(nn.Module):
 
 
 def train(args):
-    model = InceptionV3().cuda().train()
-    dataset = InceptionDataset(args.dataset_path)
+    model = InceptionV3(args.n_class).cuda().train()
+    dataset = InceptionDataset(args.dataset_type, args.dataset_path, split=args.split)
     dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True,
                             num_workers=args.num_workers)
     criterion = nn.CrossEntropyLoss()
@@ -90,10 +90,21 @@ if __name__ == "__main__":
     parser.add_argument('--batch_size', default=32, type=int)
     parser.add_argument('--num_workers', default=8, type=int)
     parser.add_argument('--epochs', default=100, type=int)
-    parser.add_argument("--save_path", default='/scratch/gobi2/wren/2516/')
-    parser.add_argument('--dataset_path', default='./dataset/birds.hdf5')
+    parser.add_argument("--save_path", default='/scratch/gobi2/wren/2516/', type=str)
+    parser.add_argument('--dataset_type', default='birds', choices=['birds', 'flowers'], type=str)
+    parser.add_argument('--dataset_path', default='./dataset/birds.hdf5', type=str)
+    parser.add_argument('--dataset_split', default='train,valid,test', type=str, help="separate by comma")
     parser.add_argument('--print_interval', default=5, type=int)
     parser.add_argument('--tqdm_interval', default=60, type=float)
     args = parser.parse_args()
+
+    args.split = [split for split in args.dataset_split.split(",")]
+
+    class_dict = {"train":150, "valid":50, "test":50} if args.dataset_type == "birds" else {"train":62, "valid":20, "test":20}
+
+    n_class = 0
+    for split in args.split:
+        n_class += class_dict[split]
+    args.n_class = n_class
 
     train(args)

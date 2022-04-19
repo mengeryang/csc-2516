@@ -10,9 +10,9 @@ import torch.nn.functional as F
 
 class InceptionDataset(Dataset):
 
-    def __init__(self, datasetFile, transform=None, split=["train", "test", "valid"]):
+    def __init__(self, datasetType, datasetFile, split=["train", "test", "valid"]):
+        self.datasetType = datasetType
         self.datasetFile = datasetFile
-        self.transform = transform
         self.dataset = None
         self.dataset_keys = None
         self.h5py2int = lambda x: int(np.array(x))
@@ -42,7 +42,10 @@ class InceptionDataset(Dataset):
 
         right_image = bytes(np.array(example['img']))
         right_class = example['class'][()]
-        right_class = int(right_class.split(".")[0]) - 1
+        if self.datasetType == "flowers":
+            right_class = int(right_class.split("_")[1]) - 1
+        else:
+            right_class = int(right_class.split(".")[0]) - 1
         right_embed = np.array(example['embeddings'], dtype=float)
 
         right_image = Image.open(io.BytesIO(right_image)).resize((64, 64))
