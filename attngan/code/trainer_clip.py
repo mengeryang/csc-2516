@@ -433,7 +433,8 @@ class ClipGANTrainer(object):
         else:
             # Build and load the generator
             text_encoder = self.prepare_text_encoder()
-            # text_encoder = text_encoder.cuda()
+            text_encoder = text_encoder.cuda()
+            text_encoder.eval()
 
             # the path to save generated images
             if cfg.GAN.B_DCGAN:
@@ -468,6 +469,8 @@ class ClipGANTrainer(object):
                     ######################################################
                     inputs = self.clip_processor(text=captions, images=self.dummy_img, return_tensors="pt",
                                                  padding=True)
+                    for k in inputs.keys():
+                        inputs[k] = inputs[k].cuda()
                     clip_output = text_encoder(**inputs)
                     mask = (inputs.attention_mask == 0).cuda()
                     sent_emb = clip_output.text_embeds.cuda()

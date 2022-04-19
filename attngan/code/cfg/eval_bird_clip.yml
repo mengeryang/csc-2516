@@ -5,7 +5,7 @@ DATA_DIR: '../data/birds/'
 GPU_ID: 3
 WORKERS: 1
 
-B_VALIDATION: True  # True  # False
+B_VALIDATION: False  # True  # False
 TREE:
     BRANCH_NUM: 3
 
