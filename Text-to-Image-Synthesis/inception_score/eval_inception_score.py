@@ -101,33 +101,32 @@ if __name__ == '__main__':
     parser.add_argument('--num_workers', default=8, type=int)
     parser.add_argument("--model_path", default='./dataset/inception_v3_latest.pth')
     parser.add_argument('--dataset_type', default='birds', choices=['birds', 'flowers'], type=str)
-    parser.add_argument('--dataset_path', default='./dataset/birds_clip.hdf5')
+    parser.add_argument('--dataset_path', default='./dataset/birds_bert.hdf5')
     parser.add_argument('--dataset_split', default='test', type=str, help="separate by comma")
+    parser.add_argument('--n_class', default=200, type=int)
     parser.add_argument('--print_interval', default=5, type=int)
     parser.add_argument('--tqdm_interval', default=60, type=float)
     parser.add_argument('--mode', default="fake", type=str)
 
     # gan
     parser.add_argument("--type", default='gan')
-    parser.add_argument('--embed_dim', default=512, type=int)
-    parser.add_argument('--pre_trained_gen', default="./checkpoints_clip/gen_190.pth")
+    parser.add_argument('--embed_dim', default=768, type=int)
+    parser.add_argument('--pre_trained_gen', default="./checkpoints_bert/bert_cls_int/gen_190.pth")
     args = parser.parse_args()
 
     resize = True if args.mode == "fake" else False
 
     args.split = [split for split in args.dataset_split.split(",")]
 
-    class_dict = {"train":150, "valid":50, "test":50} if args.dataset_type == "birds" else {"train":62, "valid":20, "test":20}
-
-    n_class = 0
-    for split in args.split:
-        n_class += class_dict[split]
-    args.n_class = n_class
-
     print ("Calculating Inception Score...")
     # only support cuda=True
     print (inception_score(args, cuda=True, resize=resize, splits=10))
-    # inception score for real test dataset: (21.93618796142134, 0.8870024899660087)
+
+    # ==================== birds result ====================
     # (64.44085900313355, 1.2005505343822582) original
+
     # (63.14714825591868, 1.4279450332975985) bert
     # (65.95682410638216, 0.9856238497738542) clip
+
+    # (65.9984660482684, 1.018033979014364) bert_cls
+    # (68.1460610872186, 1.031269549149029) bert_cls_int
