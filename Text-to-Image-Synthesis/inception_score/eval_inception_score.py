@@ -101,7 +101,7 @@ if __name__ == '__main__':
     parser.add_argument('--num_workers', default=8, type=int)
     parser.add_argument("--model_path", default='./dataset/inception_v3_latest.pth')
     parser.add_argument('--dataset_type', default='birds', choices=['birds', 'flowers'], type=str)
-    parser.add_argument('--dataset_path', default='./dataset/birds_bert.hdf5')
+    parser.add_argument('--dataset_path', default='./dataset/birds_clip.hdf5')
     parser.add_argument('--dataset_split', default='test', type=str, help="separate by comma")
     parser.add_argument('--n_class', default=200, type=int)
     parser.add_argument('--print_interval', default=5, type=int)
@@ -110,8 +110,8 @@ if __name__ == '__main__':
 
     # gan
     parser.add_argument("--type", default='gan')
-    parser.add_argument('--embed_dim', default=768, type=int)
-    parser.add_argument('--pre_trained_gen', default="./checkpoints_bert/bert_cls_int/gen_190.pth")
+    parser.add_argument('--embed_dim', default=512, type=int)
+    parser.add_argument('--pre_trained_gen', default="./checkpoints_clip/birds/clip_gan_cls_int/gen_190.pth")
     args = parser.parse_args()
 
     resize = True if args.mode == "fake" else False
@@ -125,8 +125,10 @@ if __name__ == '__main__':
     # ==================== birds result ====================
     # (64.44085900313355, 1.2005505343822582) original
 
-    # (63.14714825591868, 1.4279450332975985) bert
-    # (65.95682410638216, 0.9856238497738542) clip
+    # (63.14714825591868, 1.4279450332975985) bert_gan
+    # (65.9984660482684, 1.018033979014364) bert_gan_cls
+    # (68.1460610872186, 1.031269549149029) bert_gan_cls_int
 
-    # (65.9984660482684, 1.018033979014364) bert_cls
-    # (68.1460610872186, 1.031269549149029) bert_cls_int
+    # (65.95682410638216, 0.9856238497738542) clip_gan
+    # (64.9924745209834, 1.4743849112611827) clip_gan_cls
+    # (64.78681555128566, 1.8276157115682619) clip_gan_cls_int

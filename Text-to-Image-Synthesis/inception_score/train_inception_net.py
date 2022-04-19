@@ -73,12 +73,12 @@ def train(args):
             print("")
             print(f"Training accuracy: {accuracy}")
             print("")
-            torch.save(model.state_dict(), args.save_path + f"inception_v3_{epoch + 1}.pth")
+            torch.save(model.state_dict(), args.save_path + f"inception_v3_{epoch + 1}_{args.dataset_type}.pth")
 
         if (epoch + 1) % 2 == 0:
             scheduler.step()
 
-    torch.save(model.state_dict(), args.save_path + "inception_v3_latest.pth")
+    torch.save(model.state_dict(), args.save_path + f"inception_v3_latest_{args.dataset_type}.pth")
     return model
 
 
