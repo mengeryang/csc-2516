@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 from torchvision.models import inception_v3
-from inception_score.inception_dataset import InceptionDataset
+from eval_gan.inception_dataset import InceptionDataset
 
 
 class InceptionV3(nn.Module):
@@ -18,8 +18,9 @@ class InceptionV3(nn.Module):
         self.fc = nn.Linear(2048, n_class)
 
     def forward(self, x):
-        x = self.inception(x).logits
-        return self.fc(x)
+        x1 = self.inception(x).logits
+        y = self.fc(x1)
+        return x1, y
 
 
 def train(args):
@@ -38,7 +39,7 @@ def train(args):
             imgs = sample['right_images'].float().cuda()
             labels = sample['right_classes'].squeeze(1).cuda()
 
-            logit = model(imgs)
+            _, logit = model(imgs)
             loss = criterion(logit, labels)
 
             optimizer.zero_grad()
@@ -64,7 +65,7 @@ def train(args):
 
                 with torch.no_grad():
                     logit = model(imgs)
-                    prob, class_ = torch.max(nn.functional.softmax(logit, dim=1), dim=1)
+                    _, class_ = torch.max(nn.functional.softmax(logit, dim=1), dim=1)
 
                 class_ = class_.cpu().numpy()
                 right += np.sum(class_ == labels)

@@ -11,8 +11,8 @@ import numpy as np
 from tqdm import tqdm
 from scipy.stats import entropy
 
-from inception_score.inception_dataset import InceptionDataset
-from inception_score.train_inception_net import InceptionV3
+from eval_gan.inception_dataset import InceptionDataset
+from eval_gan.train_inception_net import InceptionV3
 from models.gan_factory_clip import gan_factory
 
 def inception_score(args, cuda=True, resize=False, splits=1):
@@ -40,7 +40,7 @@ def inception_score(args, cuda=True, resize=False, splits=1):
         dtype = torch.FloatTensor
 
     # Set up dataloader
-    dataloader = torch.utils.data.DataLoader(imgs, batch_size=batch_size, num_workers=args.num_workers)
+    dataloader = torch.utils.data.DataLoader(imgs, batch_size=batch_size, num_workers=args.num_workers, drop_last=True)
 
     # Load inception model
     inception_model = InceptionV3(args.n_class).type(dtype)
@@ -58,11 +58,11 @@ def inception_score(args, cuda=True, resize=False, splits=1):
         if resize:
             x = up(x)
         with torch.no_grad():
-            x = inception_model(x)
+            _, x = inception_model(x)
         return F.softmax(x, dim=1).data.cpu().numpy()
 
     # Get predictions
-    preds = np.zeros((N, 200))
+    preds = np.zeros((N, args.n_class))
 
     for i, batch in enumerate(tqdm(dataloader, mininterval=args.tqdm_interval), 0):
         right_images = batch['right_images'].float().type(dtype)
@@ -99,19 +99,19 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--batch_size', default=4, type=int)
     parser.add_argument('--num_workers', default=8, type=int)
-    parser.add_argument("--model_path", default='./dataset/inception_v3_latest_birds.pth')
-    parser.add_argument('--dataset_type', default='birds', choices=['birds', 'flowers'], type=str)
-    parser.add_argument('--dataset_path', default='./dataset/birds_clip.hdf5')
-    parser.add_argument('--dataset_split', default='test', type=str, help="separate by comma")
-    parser.add_argument('--n_class', default=200, type=int)
+    parser.add_argument("--model_path", default='./dataset/inception_v3_latest_flowers.pth')
+    parser.add_argument('--dataset_type', default='flowers', choices=['birds', 'flowers'], type=str)
+    parser.add_argument('--dataset_path', default='./dataset/flowers_bert.hdf5')
+    parser.add_argument('--dataset_split', default='train,valid,test', type=str, help="separate by comma")
+    parser.add_argument('--n_class', default=102, type=int)
     parser.add_argument('--print_interval', default=5, type=int)
     parser.add_argument('--tqdm_interval', default=60, type=float)
-    parser.add_argument('--mode', default="fake", type=str)
+    parser.add_argument('--mode', default="fake", choices=['fake', 'real'], type=str)
 
     # gan
     parser.add_argument("--type", default='gan')
-    parser.add_argument('--embed_dim', default=512, type=int)
-    parser.add_argument('--pre_trained_gen', default="./checkpoints_clip/birds/clip_gan_cls_int/gen_190.pth")
+    parser.add_argument('--embed_dim', default=768, type=int)
+    parser.add_argument('--pre_trained_gen', default="./checkpoints_bert/flowers/bert_gan_cls/gen_190.pth")
     args = parser.parse_args()
 
     resize = True if args.mode == "fake" else False
@@ -132,3 +132,12 @@ if __name__ == '__main__':
     # (65.95682410638216, 0.9856238497738542) clip_gan
     # (64.9924745209834, 1.4743849112611827) clip_gan_cls
     # (64.78681555128566, 1.8276157115682619) clip_gan_cls_int
+
+    # ==================== flowers result ====================
+    #  bert_gan
+    # (27.349640412197896, 0.7051591400861866) bert_gan_cls (28.721908311244356, 0.48028194945170394)
+    #  bert_gan_cls_int
+
+    #  clip_gan
+    # (26.60966056121302, 0.9713616454289478) clip_gan_cls (27.675426317183927, 0.44052624945074764)
+    #  clip_gan_cls_int
